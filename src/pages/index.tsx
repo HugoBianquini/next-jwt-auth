@@ -1,11 +1,12 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useContext, useReducer, useState } from 'react'
 import styles from '../styles/Home.module.css'
-import { Inter } from 'next/font/google'
-const inter = Inter({ subsets: ['latin'] })
+import { AuthContext } from '../../contexts/AuthContext';
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const { signIn } = useContext(AuthContext)
 
   function handleSubmit(event: FormEvent) {
 
@@ -16,7 +17,7 @@ export default function Home() {
       password
     }
 
-    console.log(data)
+    signIn(data);
   }
 
   return (
