@@ -32,7 +32,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
 
   useEffect(() => {
-    const {'nextauth.token': token} = parseCookies();
+    const {'nextjwt.token': token} = parseCookies();
 
     if(token) {
       api.get("/me").then(response => {
@@ -59,17 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const {token, refreshToken, permissions, roles} = response.data;
 
-      // first param is undefined because signIn() is executed on browser
-      // TODO: change the cookie name
-      setCookie(undefined, 'nextjwt.token', token, {
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/'
-      })
-
-      setCookie(undefined, 'nextjwt.refreshToken', refreshToken, {
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/'
-      })
+      setTokenCookies(token, refreshToken);
   
       setUser({
         email,
@@ -91,4 +81,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     </AuthContext.Provider>
   )
 
+}
+
+export function setTokenCookies(token: string, refreshToken: string) {
+      // first param is undefined because signIn() is executed on browser
+      // TODO: change the cookie name
+      setCookie(undefined, 'nextjwt.token', token, {
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: '/'
+      })
+
+      setCookie(undefined, 'nextjwt.refreshToken', refreshToken, {
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: '/'
+      })
 }
