@@ -1,4 +1,4 @@
-import { setTokenCookies } from "@/contexts/AuthContext";
+import { setTokenCookies, signOut } from "@/contexts/AuthContext";
 import axios, { AxiosError } from "axios"
 import { parseCookies } from "nookies"
 
@@ -73,7 +73,9 @@ function onResponseError(error: AxiosError) {
     })
 
     } else {
-      // logout
+      signOut();
     }
   }
+
+  return Promise.reject(error)
 }

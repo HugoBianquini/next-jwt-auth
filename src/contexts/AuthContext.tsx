@@ -1,6 +1,6 @@
 import { api } from "@/services/api";
-import { useRouter } from "next/router";
-import { parseCookies, setCookie } from "nookies";
+import Router from "next/router";
+import { destroyCookie, parseCookies, setCookie } from "nookies";
 import { createContext, ReactNode, useEffect, useState } from "react";
 
 type User = {
@@ -29,7 +29,6 @@ export const AuthContext = createContext({} as AuthContextData)
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User>()
-  const router = useRouter();
 
   useEffect(() => {
     const {'nextjwt.token': token} = parseCookies();
@@ -43,6 +42,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           permissions,
           roles
         })
+      })
+      .catch(() => {
+        signOut();
       })
     }
   }, [])
@@ -69,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       api.defaults.headers['Authorization'] = `Bearer ${token}`
 
-      router.push('/dashboard')
+      Router.push('/dashboard')
     } catch(err) {
       console.log(err)
     }
@@ -83,16 +85,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 }
 
-export function setTokenCookies(token: string, refreshToken: string) {
+export function setTokenCookies(token: string, refreshToken: string, ctx = undefined) {
       // first param is undefined because signIn() is executed on browser
       // TODO: change the cookie name
-      setCookie(undefined, 'nextjwt.token', token, {
+      setCookie(ctx, 'nextjwt.token', token, {
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/'
       })
 
-      setCookie(undefined, 'nextjwt.refreshToken', refreshToken, {
+      setCookie(ctx, 'nextjwt.refreshToken', refreshToken, {
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/'
       })
+}
+
+export function signOut(ctx = undefined){
+  destroyCookie(ctx, 'nextjwt.token');
+  destroyCookie(ctx, 'nextjwt.refreshToken')
+
+  Router.push("/")
 }
