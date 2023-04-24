@@ -1,4 +1,4 @@
-import { api } from "@/services/api";
+import { api } from "@/services/apiClient";
 import Router from "next/router";
 import { destroyCookie, parseCookies, setCookie } from "nookies";
 import { createContext, ReactNode, useEffect, useState } from "react";
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 }
 
-export function setTokenCookies(token: string, refreshToken: string, ctx = undefined) {
+export function setTokenCookies(token: string, refreshToken: string, ctx: any = undefined) {
       // first param is undefined because signIn() is executed on browser
       // TODO: change the cookie name
       setCookie(ctx, 'nextjwt.token', token, {
