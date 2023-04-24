@@ -1,15 +1,16 @@
+import { setupApiClient } from "@/services/api";
 import { GetServerSideProps, GetServerSidePropsContext, GetServerSidePropsResult } from "next";
 import { parseCookies } from "nookies";
 
-export function withSSRGuest(fn: GetServerSideProps) {
+export function withSSRAuth(fn: GetServerSideProps) {
   return async (ctx: GetServerSidePropsContext): Promise<GetServerSidePropsResult<{}>> => {
     const cookies = parseCookies(ctx);
 
-    // if user is already logged
-    if(cookies['nextjwt.token']) {
+    // if user is not authenticated
+    if(!cookies['nextjwt.token']) {
       return {
         redirect: {
-          destination: '/dashboard',
+          destination: '/',
           permanent: false
         }
       }
