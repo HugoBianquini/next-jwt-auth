@@ -1,4 +1,4 @@
-import { setupApiClient } from "@/services/api";
+import { AuthTokenError } from "@/services/errors/AuthTokenError";
 import { GetServerSideProps, GetServerSidePropsContext, GetServerSidePropsResult } from "next";
 import { parseCookies } from "nookies";
 
@@ -16,6 +16,23 @@ export function withSSRAuth(fn: GetServerSideProps) {
       }
     }
 
-    return await fn(ctx)
+    try {
+      return await fn(ctx)
+    } catch (err) {
+      // if an auth error occurs, redirect to login
+      if(err instanceof AuthTokenError) {
+        return {
+          redirect: {
+            destination: '/',
+            permanent: false
+          }
+        }
+      } else {
+        // handle any other error
+        return {
+          props: {}
+        }
+      }
+    }
   }
 }

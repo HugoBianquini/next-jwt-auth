@@ -1,7 +1,7 @@
 import { setTokenCookies, signOut } from "@/contexts/AuthContext";
 import axios, { AxiosError } from "axios"
-import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import { parseCookies } from "nookies"
+import { AuthTokenError } from "./errors/AuthTokenError";
 
 type ErrorResponseData = {
   code?: string;
@@ -60,6 +60,8 @@ export function setupApiClient(ctx: any  = undefined) {
   
           if (typeof window !== 'undefined') {
             signOut(ctx)
+          } else {
+            return Promise.reject(new AuthTokenError)
           }
         }).finally(() => {
           isRefreshing = false
