@@ -1,3 +1,4 @@
+import { Can } from "@/components/Can"
 import { AuthContext } from "@/contexts/AuthContext"
 import { setupApiClient } from "@/services/api"
 import { api } from "@/services/apiClient"
@@ -15,7 +16,13 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <h1>Dashboard: {user?.email}</h1>
+    <>
+      <h1>Dashboard: {user?.email}</h1>
+
+      <Can permissions={["metrics.list"]}>
+        <div>Métricas</div>
+      </Can>
+    </>
   )
 }
 
