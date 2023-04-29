@@ -1,4 +1,4 @@
-import { FormEvent, useContext, useReducer, useState } from 'react';
+import { FormEvent, useContext, useState } from 'react';
 import { withSSRGuest } from '@/utils/withSSRGuest';
 import { AuthContext } from '../contexts/AuthContext';
 import styles from '../styles/Home.module.css';
