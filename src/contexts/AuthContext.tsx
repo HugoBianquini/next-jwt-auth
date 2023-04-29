@@ -1,37 +1,45 @@
-import { api } from "@/services/apiClient";
-import Router from "next/router";
-import { destroyCookie, parseCookies, setCookie } from "nookies";
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { api } from '@/services/apiClient';
+import Router from 'next/router';
+import { destroyCookie, parseCookies, setCookie } from 'nookies';
+import { createContext, ReactNode, useEffect, useMemo, useState } from 'react';
 
 type User = {
   email: string;
   permissions: string[];
   roles: string[];
-}
+};
 
 type SignInCredentials = {
   email: string;
   password: string;
-}
+};
 
 type AuthContextData = {
   signIn: (credentials: SignInCredentials) => Promise<void>;
   signOut: () => void;
   user: User | undefined;
   isAuthenticated: boolean;
-}
+};
 
 type AuthProviderProps = {
   children: ReactNode;
+};
+
+let authChannel: BroadcastChannel;
+
+export function signOut(ctx = undefined) {
+  destroyCookie(ctx, 'nextjwt.token');
+  destroyCookie(ctx, 'nextjwt.refreshToken');
+
+  authChannel.postMessage('signOut');
+
+  Router.push('/');
 }
 
-let authChannel: BroadcastChannel
-
-export const AuthContext = createContext({} as AuthContextData)
-
+export const AuthContext = createContext({} as AuthContextData);
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User>()
+  const [user, setUser] = useState<User>();
 
   useEffect(() => {
     // create shared channel for broadcast signout
@@ -40,89 +48,88 @@ export function AuthProvider({ children }: AuthProviderProps) {
     authChannel.onmessage = (message) => {
       switch (message.data) {
         case 'signOut':
-          Router.push('/')
+          Router.push('/');
           break;
         default:
-          break
+          break;
       }
-    }
-  }, [])
+    };
+  }, []);
 
   useEffect(() => {
-    const {'nextjwt.token': token} = parseCookies();
+    const { 'nextjwt.token': token } = parseCookies();
 
-    if(token) {
-      api.get("/me").then(response => {
-        const {email, permissions, roles} = response.data;
+    if (token) {
+      api
+        .get('/me')
+        .then((response) => {
+          const { email, permissions, roles } = response.data;
 
-        setUser({
-          email,
-          permissions,
-          roles
+          setUser({
+            email,
+            permissions,
+            roles,
+          });
         })
-      })
-      .catch(() => {
-        signOut();
-      })
+        .catch(() => {
+          signOut();
+        });
     }
-  }, [])
+  }, []);
 
   const isAuthenticated = !!user;
 
-  async function signIn({email, password}: SignInCredentials) {
-    
+  async function signIn({ email, password }: SignInCredentials) {
     try {
       const response = await api.post('sessions', {
         email,
-        password
-      })
+        password,
+      });
 
-      const {token, refreshToken, permissions, roles} = response.data;
+      const { token, refreshToken, permissions, roles } = response.data;
 
       setTokenCookies(token, refreshToken);
-  
+
       setUser({
         email,
         permissions,
-        roles
+        roles,
       });
 
-      api.defaults.headers['Authorization'] = `Bearer ${token}`
+      api.defaults.headers.Authorization = `Bearer ${token}`;
 
-      Router.push('/dashboard')
-
-    } catch(err) {
-      console.log(err)
+      Router.push('/dashboard');
+    } catch (err) {
+      console.log(err);
     }
   }
 
+  const authProviderValue: AuthContextData = useMemo(
+    () => ({ signIn, signOut, isAuthenticated, user }),
+    [isAuthenticated, user],
+  );
+
   return (
-    <AuthContext.Provider value={{signIn, signOut, isAuthenticated, user}}>
+    <AuthContext.Provider value={authProviderValue}>
       {children}
     </AuthContext.Provider>
-  )
-
+  );
 }
 
-export function setTokenCookies(token: string, refreshToken: string, ctx: any = undefined) {
-      // first param is undefined because signIn() is executed on browser
-      // TODO: change the cookie name
-      setCookie(ctx, 'nextjwt.token', token, {
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/'
-      })
+export function setTokenCookies(
+  token: string,
+  refreshToken: string,
+  ctx: any = undefined,
+) {
+  // first param is undefined because signIn() is executed on browser
+  // TODO: change the cookie name
+  setCookie(ctx, 'nextjwt.token', token, {
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+    path: '/',
+  });
 
-      setCookie(ctx, 'nextjwt.refreshToken', refreshToken, {
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/'
-      })
-}
-
-export function signOut(ctx = undefined){
-  destroyCookie(ctx, 'nextjwt.token');
-  destroyCookie(ctx, 'nextjwt.refreshToken')
-
-  authChannel.postMessage('signOut')
-
-  Router.push("/")
+  setCookie(ctx, 'nextjwt.refreshToken', refreshToken, {
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+    path: '/',
+  });
 }
