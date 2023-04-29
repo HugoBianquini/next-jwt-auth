@@ -15,7 +15,8 @@ type SignInCredentials = {
 }
 
 type AuthContextData = {
-  signIn(credentials: SignInCredentials): Promise<void>;
+  signIn: (credentials: SignInCredentials) => Promise<void>;
+  signOut: () => void;
   user: User | undefined;
   isAuthenticated: boolean;
 }
@@ -24,11 +25,28 @@ type AuthProviderProps = {
   children: ReactNode;
 }
 
+let authChannel: BroadcastChannel
+
 export const AuthContext = createContext({} as AuthContextData)
 
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User>()
+
+  useEffect(() => {
+    // create shared channel for broadcast signout
+    authChannel = new BroadcastChannel('auth');
+
+    authChannel.onmessage = (message) => {
+      switch (message.data) {
+        case 'signOut':
+          Router.push('/')
+          break;
+        default:
+          break
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const {'nextjwt.token': token} = parseCookies();
@@ -72,13 +90,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       api.defaults.headers['Authorization'] = `Bearer ${token}`
 
       Router.push('/dashboard')
+
     } catch(err) {
       console.log(err)
     }
   }
 
   return (
-    <AuthContext.Provider value={{signIn, isAuthenticated, user}}>
+    <AuthContext.Provider value={{signIn, signOut, isAuthenticated, user}}>
       {children}
     </AuthContext.Provider>
   )
@@ -102,6 +121,8 @@ export function setTokenCookies(token: string, refreshToken: string, ctx: any = 
 export function signOut(ctx = undefined){
   destroyCookie(ctx, 'nextjwt.token');
   destroyCookie(ctx, 'nextjwt.refreshToken')
+
+  authChannel.postMessage('signOut')
 
   Router.push("/")
 }
